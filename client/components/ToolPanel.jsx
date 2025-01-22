@@ -1,7 +1,30 @@
 import { useEffect, useState } from "react";
 
-const functionDescription = `
-Call this function when a user asks for a color palette.
+const careerAdviceDescription = `
+Call this function when a user asks for career advice. The function should return a structured JSON object containing the topic and the advice. 
+Make sure the advice is practical, actionable, and relevant to the specified topic. For example, if the topic is 'networking', provide tips on how to effectively network in a professional setting.
+
+The advice should be broken down into clear, concise steps or tips that the user can follow. Each piece of advice should be supported by examples or best practices. 
+Consider including the following elements:
+- An introduction to the topic and its importance in career development.
+- Specific strategies or actions the user can take.
+- Common pitfalls to avoid and how to overcome them.
+- Additional resources or tools that can help the user further explore the topic.
+
+Ensure that the advice is tailored to the user's level of experience and industry, if specified.
+`;
+
+const jobPostDescription = `
+Call this function when a user asks for job-post creation. The function should return a structured JSON object containing the job title, description, and requirements.
+
+The job post should be detailed and professional, aimed at attracting qualified candidates. Consider including the following elements:
+- A compelling job title that accurately reflects the role.
+- A comprehensive job description that outlines the key responsibilities and expectations.
+- A list of required and preferred qualifications, including skills, experience, and education.
+- Information about the company culture, values, and mission to attract candidates who align with the organization's goals.
+- Details about the application process and any deadlines.
+
+Ensure that the job post is clear, concise, and free of jargon. It should be written in a way that is inclusive and encourages a diverse range of candidates to apply.
 `;
 
 const sessionUpdate = {
@@ -10,26 +33,46 @@ const sessionUpdate = {
     tools: [
       {
         type: "function",
-        name: "display_color_palette",
-        description: functionDescription,
+        name: "provide_career_advice",
+        description: careerAdviceDescription,
         parameters: {
           type: "object",
           strict: true,
           properties: {
-            theme: {
+            topic: {
               type: "string",
-              description: "Description of the theme for the color scheme.",
+              description: "The specific career topic or area of interest (e.g., 'networking', 'skills').",
             },
-            colors: {
-              type: "array",
-              description: "Array of five hex color codes based on the theme.",
-              items: {
-                type: "string",
-                description: "Hex color code",
-              },
+            advice: {
+              type: "string",
+              description: "A detailed piece of advice related to the specified topic.",
             },
           },
-          required: ["theme", "colors"],
+          required: ["topic", "advice"],
+        },
+      },
+      {
+        type: "function",
+        name: "create_job_post",
+        description: jobPostDescription,
+        parameters: {
+          type: "object",
+          strict: true,
+          properties: {
+            title: {
+              type: "string",
+              description: "The job title.",
+            },
+            description: {
+              type: "string",
+              description: "A detailed job description.",
+            },
+            requirements: {
+              type: "string",
+              description: "The job requirements.",
+            },
+          },
+          required: ["title", "description", "requirements"],
         },
       },
     ],
@@ -38,24 +81,39 @@ const sessionUpdate = {
 };
 
 function FunctionCallOutput({ functionCallOutput }) {
-  const { theme, colors } = JSON.parse(functionCallOutput.arguments);
-
-  const colorBoxes = colors.map((color) => (
-    <div
-      key={color}
-      className="w-full h-16 rounded-md flex items-center justify-center border border-gray-200"
-      style={{ backgroundColor: color }}
-    >
-      <p className="text-sm font-bold text-black bg-slate-100 rounded-md p-2 border border-black">
-        {color}
-      </p>
-    </div>
-  ));
+  const { topic, advice, title, description, requirements } = JSON.parse(functionCallOutput.arguments);
 
   return (
     <div className="flex flex-col gap-2">
-      <p>Theme: {theme}</p>
-      {colorBoxes}
+      {topic && advice && (
+        <>
+          <p>
+            <strong>Career Advice:</strong>
+          </p>
+          <p>
+            <strong>Topic:</strong> {topic}
+          </p>
+          <p>
+            <strong>Advice:</strong> {advice}
+          </p>
+        </>
+      )}
+      {title && description && requirements && (
+        <>
+          <p>
+            <strong>Job Post:</strong>
+          </p>
+          <p>
+            <strong>Title:</strong> {title}
+          </p>
+          <p>
+            <strong>Description:</strong> {description}
+          </p>
+          <p>
+            <strong>Requirements:</strong> {requirements}
+          </p>
+        </>
+      )}
       <pre className="text-xs bg-gray-100 rounded-md p-2 overflow-x-auto">
         {JSON.stringify(functionCallOutput, null, 2)}
       </pre>
@@ -87,8 +145,8 @@ export default function ToolPanel({
     ) {
       mostRecentEvent.response.output.forEach((output) => {
         if (
-          output.type === "function_call" &&
-          output.name === "display_color_palette"
+          (output.type === "function_call" && output.name === "provide_career_advice") ||
+          (output.type === "function_call" && output.name === "create_job_post")
         ) {
           setFunctionCallOutput(output);
           setTimeout(() => {
@@ -96,8 +154,7 @@ export default function ToolPanel({
               type: "response.create",
               response: {
                 instructions: `
-                ask for feedback about the color palette - don't repeat 
-                the colors, just ask if they like the colors.
+                Ask for feedback about the ${output.name === "provide_career_advice" ? "career advice" : "job post"} provided.
               `,
               },
             });
@@ -117,12 +174,12 @@ export default function ToolPanel({
   return (
     <section className="h-full w-full flex flex-col gap-4">
       <div className="h-full bg-gray-50 rounded-md p-4">
-        <h2 className="text-lg font-bold">Color Palette Tool</h2>
+        <h2 className="text-lg font-bold">Career Advice and Job Post Tool</h2>
         {isSessionActive ? (
           functionCallOutput ? (
             <FunctionCallOutput functionCallOutput={functionCallOutput} />
           ) : (
-            <p>Ask for advice on a color palette...</p>
+            <p>Ask for career advice or create a job post...</p>
           )
         ) : (
           <p>Start the session to use this tool...</p>
