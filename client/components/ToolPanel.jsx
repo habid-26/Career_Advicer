@@ -80,45 +80,58 @@ const sessionUpdate = {
   },
 };
 
-function FunctionCallOutput({ functionCallOutput }) {
-  const { topic, advice, title, description, requirements } = JSON.parse(functionCallOutput.arguments);
+const logUserInteraction = (interaction) => {
+  console.log("User Interaction:", interaction);
+};
 
-  return (
-    <div className="flex flex-col gap-2">
-      {topic && advice && (
-        <>
-          <p>
-            <strong>Career Advice:</strong>
-          </p>
-          <p>
-            <strong>Topic:</strong> {topic}
-          </p>
-          <p>
-            <strong>Advice:</strong> {advice}
-          </p>
-        </>
-      )}
-      {title && description && requirements && (
-        <>
-          <p>
-            <strong>Job Post:</strong>
-          </p>
-          <p>
-            <strong>Title:</strong> {title}
-          </p>
-          <p>
-            <strong>Description:</strong> {description}
-          </p>
-          <p>
-            <strong>Requirements:</strong> {requirements}
-          </p>
-        </>
-      )}
-      <pre className="text-xs bg-gray-100 rounded-md p-2 overflow-x-auto">
-        {JSON.stringify(functionCallOutput, null, 2)}
-      </pre>
-    </div>
-  );
+const handleError = (error) => {
+  console.error("Error:", error);
+  return { error: error.message };
+};
+
+function FunctionCallOutput({ functionCallOutput }) {
+  try {
+    const { topic, advice, title, description, requirements } = JSON.parse(functionCallOutput.arguments);
+
+    return (
+      <div className="flex flex-col gap-2">
+        {topic && advice && (
+          <>
+            <p>
+              <strong>Career Advice:</strong>
+            </p>
+            <p>
+              <strong>Topic:</strong> {topic}
+            </p>
+            <p>
+              <strong>Advice:</strong> {advice}
+            </p>
+          </>
+        )}
+        {title && description && requirements && (
+          <>
+            <p>
+              <strong>Job Post:</strong>
+            </p>
+            <p>
+              <strong>Title:</strong> {title}
+            </p>
+            <p>
+              <strong>Description:</strong> {description}
+            </p>
+            <p>
+              <strong>Requirements:</strong> {requirements}
+            </p>
+          </>
+        )}
+        <pre className="text-xs bg-gray-100 rounded-md p-2 overflow-x-auto">
+          {JSON.stringify(functionCallOutput, null, 2)}
+        </pre>
+      </div>
+    );
+  } catch (error) {
+    return <pre className="text-xs bg-red-100 rounded-md p-2 overflow-x-auto">{JSON.stringify(handleError(error), null, 2)}</pre>;
+  }
 }
 
 export default function ToolPanel({
@@ -149,6 +162,7 @@ export default function ToolPanel({
           (output.type === "function_call" && output.name === "create_job_post")
         ) {
           setFunctionCallOutput(output);
+          logUserInteraction(output);
           setTimeout(() => {
             sendClientEvent({
               type: "response.create",
